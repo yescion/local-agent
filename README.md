@@ -68,15 +68,15 @@ local-agent web
 
 ## 命令行
 
-![图片说明](.\image\CLI命令行.png)
+![图片说明](image\CLI命令行.png)
 
 ## webui
 
-![图片说明](.\image\webui.png)
+![图片说明](image\webui.png)
 
 ## 技能管理
 
-![图片说明](.\image\技能管理.png)
+![图片说明](image\技能管理.png)
 
 ## REPL 斜杠命令
 
