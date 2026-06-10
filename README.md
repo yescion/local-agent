@@ -66,6 +66,18 @@ local-agent chat --new --name "临时助手" --skills code_review
 local-agent web
 ```
 
+## 命令行
+
+![图片说明](.\image\CLI命令行.png)
+
+## webui
+
+![图片说明](.\image\webui.png)
+
+## 技能管理
+
+![图片说明](.\image\技能管理.png)
+
 ## REPL 斜杠命令
 
 | 命令 | 说明 |
