@@ -1,0 +1,99 @@
+app:
+  data_dir: "./data"
+  log_level: "INFO"
+  artifacts:
+    enabled: true
+    subdir: "artifacts"
+
+llm:
+  provider: "litellm"
+  model: "openai/deepseek-v4-flash"
+  api_base: "https://......" # 这里要改成自己的api_base 格式：https://openai.com/v1 必须以 /v1 结尾
+  api_key: "sk-....."
+  temperature: 0.7
+  max_tokens: 8192
+  timeout: 120
+  stream: true
+  debug: false  # true 时开启 LiteLLM 详细日志并写入 debug_log
+  debug_log: "./data/logs/litellm.log"
+
+agent:
+  max_tool_rounds: 50
+  context_window: 128000
+  context_reserve: 8000
+  system_prompt_template: null
+
+memory:
+  enabled: true
+  compact_mode: "full"
+  compact_threshold: 100000
+  compact_split_ratio: 0.7
+  short_term:
+    offload_enabled: true
+    offload_threshold_tokens: 64000
+    canvas_enabled: true
+    canvas_max_tokens: 8000
+  long_term:
+    extraction_enabled: true
+    aggregation_interval: 10
+    persona_update_interval: 50
+  retrieval:
+    top_k: 8
+    use_vector: false
+    use_bm25: true
+    rrf_k: 60
+    auto_inject: true
+    auto_inject_top_k: 5
+    auto_inject_min_query_chars: 2
+
+skills:
+  directories:
+    - "./skills/_builtin"
+    - "./skills/custom"
+  auto_reload: true
+
+storage:
+  sqlite_path: "./data/agent.db"
+  enable_wal: true
+
+background_loop:
+  enabled: true
+  default_interval_mins: 10
+  sleep_slice_secs: 1
+
+jobs:
+  enabled: true
+  poll_interval_secs: 30
+  max_concurrent_jobs: 3
+  default_timeout_secs: 300
+
+api:
+  enabled: false
+  host: "127.0.0.1"
+  port: 8080
+  cors_origins:
+    - "http://localhost:3000"
+
+tools:
+  shell_enabled: false
+  write_paths:
+    - "./data"
+    - "./data/artifacts"
+
+daytona:
+  enabled: false
+  api_key: null
+  api_url: null
+  target: null
+  language: python
+  snapshot: null
+  image: null
+  env_vars: {}
+  labels: {}
+  auto_stop_interval: 5
+  ephemeral: true
+  create_timeout: 60
+  exec_timeout: 120
+  max_output_chars: 100000
+  auto_cleanup_on_turn_end: true
+  cleanup_action: delete

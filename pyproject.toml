@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-agent"
+version = "0.1.0"
+description = "可扩展、可配置、本地优先的 Python AI Agent 框架（Local Agent）"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Local Agent Contributors" }]
+dependencies = [
+    "litellm>=1.40.0",
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "pyyaml>=6.0",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.20.0",
+    "httpx>=0.27.0",
+    "tls-client>=1.0.1",
+    "certifi>=2024.0.0",
+    "tiktoken>=0.7.0",
+    "python-frontmatter>=1.1.0",
+    "daytona>=0.184.0",
+    "trafilatura>=2.0.0",
+    "charset-normalizer>=3.3.0",
+    "pypdf>=4.0.0",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.1.0",
+    "croniter>=2.0.0",
+]
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "sse-starlette>=2.0.0",
+    "openpyxl>=3.1.0",
+    "pypdf>=4.0.0",
+    "python-docx>=1.1.0",
+]
+memory = [
+    "sqlite-vec>=0.1.0",
+]
+market = [
+    "mootdx>=0.11.0",
+    "pandas>=2.0.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+]
+
+[project.scripts]
+local-agent = "local_agent.main:cli_entry"
+aiagent = "local_agent.main:cli_entry"  # 兼容旧命令名
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"local_agent.webui" = ["*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

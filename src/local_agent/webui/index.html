@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Agent</title>
+  <script>
+    (function () {
+      var t = localStorage.getItem("local-agent-theme");
+      document.documentElement.dataset.theme = (t === "light" || t === "dark") ? t : "dark";
+    })();
+  </script>
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="app artifact-collapsed">
+    <header class="header">
+      <h1>Local Agent</h1>
+      <div class="header-actions">
+        <button class="btn btn-theme" id="btn-theme" type="button" title="切换到浅色主题" aria-label="切换到浅色主题">☀️</button>
+        <button class="btn" id="btn-skills">技能管理</button>
+        <button class="btn" id="btn-settings">配置</button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <button class="btn btn-primary" id="btn-new-thread">新会话</button>
+      </div>
+      <div class="thread-list" id="thread-list"></div>
+    </aside>
+
+    <main class="chat-panel">
+      <div class="messages" id="messages">
+        <div class="empty-state" id="chat-empty">选择或创建一个会话开始对话</div>
+      </div>
+      <div class="composer">
+        <div class="composer-main">
+          <div class="attachment-chips" id="attachment-chips" hidden></div>
+          <div class="mention-picker hidden" id="mention-picker" role="listbox" aria-label="选择会话文件"></div>
+          <div class="composer-input-row">
+            <button type="button" class="btn btn-icon" id="btn-attach" title="上传附件（支持 Ctrl+V 粘贴截图或文件）">📎</button>
+            <input type="file" id="file-input" multiple hidden
+              accept=".txt,.md,.json,.csv,.tsv,.xlsx,.xls,.pdf,.docx,.png,.jpg,.jpeg,.gif,.webp,.py,.html,.xml,.yaml,.yml" />
+            <textarea id="input" placeholder="输入消息… 支持 Ctrl+V 粘贴截图或文件；输入 @ 引用会话文件 (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
+            <button class="btn btn-primary" id="btn-send">发送</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="artifact-panel collapsed" id="artifact-panel">
+      <div class="panel-header">
+        <span>会话文件区</span>
+        <button class="btn btn-sm panel-toggle" id="btn-artifact-toggle" title="展开会话文件区">▶</button>
+      </div>
+      <div class="artifact-panel-body" id="artifact-panel-body">
+        <div class="artifact-list" id="artifact-list">
+          <div class="empty-state">暂无会话文件</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Artifact Preview Modal -->
+  <div class="modal-overlay hidden" id="artifact-modal">
+    <div class="modal modal-artifact" id="artifact-modal-dialog">
+      <div class="modal-header">
+        <h2 id="artifact-modal-title">文件预览</h2>
+        <div class="modal-header-actions">
+          <button type="button" class="btn btn-sm" id="artifact-modal-fullscreen" title="全屏预览">全屏</button>
+          <a href="#" class="btn btn-sm" id="artifact-modal-download" target="_blank" rel="noopener">下载</a>
+          <button class="modal-close" data-close="artifact-modal">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body artifact-modal-body" id="artifact-modal-body">
+        <div class="empty-state">加载中…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay hidden" id="settings-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2>配置</h2>
+        <button class="modal-close" data-close="settings-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs">
+          <button class="tab active" data-tab="global-config">全局配置</button>
+          <button class="tab" data-tab="session-config">会话配置</button>
+          <button class="tab" data-tab="scheduler-jobs">定时任务</button>
+        </div>
+        <div id="global-config" class="tab-panel">
+          <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">
+            修改后写入 config/default.yaml，敏感字段在界面中已脱敏显示。
+          </p>
+          <div class="form-group">
+            <label>LLM 模型</label>
+            <input type="text" id="cfg-llm-model" />
+          </div>
+          <div class="form-group">
+            <label>API Base</label>
+            <input type="text" id="cfg-llm-api-base" />
+          </div>
+          <div class="form-group">
+            <label>温度</label>
+            <input type="number" id="cfg-llm-temperature" step="0.1" min="0" max="2" />
+          </div>
+          <div class="form-group">
+            <label>最大工具轮次</label>
+            <input type="number" id="cfg-agent-max-tool-rounds" min="1" />
+          </div>
+          <div class="form-group">
+            <label>记忆系统</label>
+            <select id="cfg-memory-enabled">
+              <option value="true">启用</option>
+              <option value="false">禁用</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-save-global">保存全局配置</button>
+          <details style="margin-top:16px;">
+            <summary style="cursor:pointer;color:var(--text-muted);font-size:0.85rem;">查看完整配置 JSON</summary>
+            <pre class="config-tree" id="cfg-full-json"></pre>
+          </details>
+        </div>
+        <div id="session-config" class="tab-panel hidden">
+          <p id="sess-config-hint" class="sess-hint">
+            会话级配置仅影响当前会话，未覆盖的项继承所属 Agent 默认值。
+          </p>
+          <div id="sess-defaults-panel" class="defaults-panel hidden"></div>
+          <div class="form-group">
+            <label>会话标题</label>
+            <input type="text" id="sess-title" />
+          </div>
+          <div class="form-group">
+            <label>角色人设</label>
+            <input type="text" id="sess-persona-role" />
+            <div class="field-default-hint" id="sess-persona-role-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>语气风格</label>
+            <input type="text" id="sess-persona-tone" />
+            <div class="field-default-hint" id="sess-persona-tone-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>自定义指令</label>
+            <textarea id="sess-persona-instructions"></textarea>
+            <div class="field-default-hint" id="sess-persona-instructions-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>允许使用的技能</label>
+            <div class="field-default-hint" id="sess-skills-hint"></div>
+            <div class="skill-grid" id="sess-skills"></div>
+          </div>
+          <details class="sess-details">
+            <summary>系统预设指令（只读，每轮对话自动注入）</summary>
+            <pre class="config-tree" id="sess-system-directives"></pre>
+          </details>
+          <details class="sess-details">
+            <summary>当前有效系统提示预览</summary>
+            <pre class="config-tree" id="sess-prompt-preview"></pre>
+          </details>
+          <button class="btn btn-primary" id="btn-save-session">保存会话配置</button>
+          <button class="btn" id="btn-reset-session" style="margin-left:8px;">重置为 Agent 默认</button>
+        </div>
+        <div id="scheduler-jobs" class="tab-panel hidden">
+          <p id="jobs-hint" class="jobs-hint">
+            显示绑定到当前会话的定时任务。通过对话让 Agent 使用 job_scheduler 技能创建任务时，请指定本会话的 thread_id。
+          </p>
+          <div class="jobs-toolbar">
+            <button class="btn btn-sm" id="btn-refresh-jobs" type="button">刷新</button>
+            <span class="jobs-toolbar-meta" id="jobs-meta"></span>
+          </div>
+          <div id="jobs-list" class="jobs-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills Modal -->
+  <div class="modal-overlay hidden" id="skills-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2>技能管理</h2>
+        <button class="modal-close" data-close="skills-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn btn-primary" id="btn-scan-skills">重新扫描</button>
+        </div>
+        <div class="skill-grid" id="skills-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skill Detail Modal (after skills-modal so it stacks on top) -->
+  <div class="modal-overlay hidden" id="skill-detail-modal">
+    <div class="modal modal-lg modal-artifact" id="skill-detail-dialog">
+      <div class="modal-header">
+        <h2 id="skill-detail-title">技能文档</h2>
+        <div class="modal-header-actions">
+          <button type="button" class="btn btn-sm" id="skill-detail-view-toggle">查看源码</button>
+          <button class="modal-close" data-close="skill-detail-modal">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body artifact-modal-body" id="skill-detail-body">
+        <div class="empty-state">加载中…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
